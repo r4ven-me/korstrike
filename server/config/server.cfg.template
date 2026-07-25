@@ -1,0 +1,37 @@
+// Rendered from this template by entrypoint.sh (envsubst) on every container start.
+// Do not edit the generated cstrike/server.cfg directly — it gets overwritten.
+
+hostname "${SERVER_HOSTNAME}"
+rcon_password "${RCON_PASSWORD}"
+sv_password "${SV_PASSWORD}"
+
+maxplayers ${MAXPLAYERS}
+sv_lan 0
+sv_region 255
+
+mapcyclefile "mapcycle.txt"
+mp_timelimit ${MP_TIMELIMIT}
+mp_friendlyfire ${MP_FRIENDLYFIRE}
+mp_autoteambalance ${MP_AUTOTEAMBALANCE}
+mp_limitteams ${MP_LIMITTEAMS}
+
+sys_ticrate ${TICKRATE}
+sv_maxrate ${SV_MAXRATE}
+sv_minrate ${SV_MINRATE}
+decalfrequency 30
+
+sv_voiceenable 1
+sv_alltalk 0
+mp_logfile 1
+sv_logecho 1
+sv_logbans 1
+
+// RCON brute-force protection (ReHLDS).
+sv_rcon_minfailures 5
+sv_rcon_minfailuretime 5
+sv_rcon_maxfailures 10
+sv_rcon_maxfailuretime 60
+sv_rcon_banpenalty 5
+
+exec banned.cfg
+exec listip.cfg

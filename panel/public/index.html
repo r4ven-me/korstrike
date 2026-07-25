@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Korstrike — Control Panel</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192.png" />
+<link rel="apple-touch-icon" href="icons/favicon-192.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="login-screen" class="login-screen">
+  <form id="login-form" class="login-card">
+    <img src="logo.png" alt="" class="login-logo" />
+    <h1>Korstrike</h1>
+    <p class="muted" data-i18n="login.subtitle"></p>
+    <label><span data-i18n="login.username"></span><input type="text" id="login-user" autocomplete="username" required /></label>
+    <label><span data-i18n="login.password"></span><input type="password" id="login-pass" autocomplete="current-password" required /></label>
+    <button type="submit" data-i18n="login.submit"></button>
+    <p id="login-error" class="error"></p>
+  </form>
+</div>
+
+<div id="app" class="app hidden">
+  <div class="app-header">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand"><img src="icons/favicon-32.png" alt="" class="brand-icon" />Korstrike</div>
+        <div class="server-info">
+          <span id="info-hostname">—</span>
+          <span id="info-map" class="pill">—</span>
+          <span id="info-players" class="pill">—</span>
+          <span id="conn-dot" class="dot" data-i18n-title="topbar.connDot"></span>
+        </div>
+        <div class="topbar-actions">
+          <button id="lang-toggle" class="icon-btn" type="button" title="Language">EN</button>
+          <button id="theme-toggle" class="icon-btn" type="button" title="Theme">🌓</button>
+          <button id="logout-btn" class="ghost" data-i18n="topbar.logout"></button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <div class="tabs-inner">
+        <button class="tab-btn active" data-tab="dashboard" data-i18n="tabs.players"></button>
+        <button class="tab-btn" data-tab="map" data-i18n="tabs.map"></button>
+        <button class="tab-btn" data-tab="bans" data-i18n="tabs.bans"></button>
+        <button class="tab-btn" data-tab="settings" data-i18n="tabs.settings"></button>
+        <button class="tab-btn" data-tab="console" data-i18n="tabs.console"></button>
+        <button class="tab-btn" data-tab="activity" data-i18n="tabs.activity"></button>
+      </div>
+    </nav>
+  </div>
+
+  <main>
+    <section id="tab-dashboard" class="tab-panel active">
+      <table class="players-table">
+        <thead>
+          <tr>
+            <th data-i18n="players.name"></th>
+            <th>SteamID</th>
+            <th>IP</th>
+            <th data-i18n="players.ping"></th>
+            <th data-i18n="players.time"></th>
+            <th data-i18n="players.frags"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="players-body">
+          <tr><td colspan="7" class="muted" data-i18n="common.loading"></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="tab-map" class="tab-panel">
+      <h2 data-i18n="map.changeTitle"></h2>
+      <div class="row">
+        <select id="map-select"></select>
+        <button id="map-apply" data-i18n="map.changeBtn"></button>
+      </div>
+      <p class="muted" data-i18n="map.listHint"></p>
+      <h2 data-i18n="map.manualTitle"></h2>
+      <p class="muted" data-i18n="map.manualHint"></p>
+      <div class="row">
+        <input id="map-manual" data-i18n-placeholder="map.manualPlaceholder" />
+        <button id="map-manual-apply" data-i18n="map.changeBtn"></button>
+      </div>
+      <pre id="map-output" class="output"></pre>
+
+      <h2 data-i18n="map.downloadTitle"></h2>
+      <p class="muted" data-i18n="map.downloadHint"></p>
+      <div class="row">
+        <input id="map-download-name" data-i18n-placeholder="map.downloadNamePlaceholder" />
+        <input id="map-download-url" data-i18n-placeholder="map.downloadUrlPlaceholder" />
+        <button id="map-download-apply" data-i18n="map.downloadBtn"></button>
+      </div>
+      <pre id="map-download-output" class="output"></pre>
+    </section>
+
+    <section id="tab-bans" class="tab-panel">
+      <h2 data-i18n="bans.steamidTitle"></h2>
+      <div class="row">
+        <input id="ban-steamid" placeholder="STEAM_1:0:12345" />
+        <input id="ban-steamid-minutes" type="number" min="0" value="0" data-i18n-placeholder="bans.minutesPlaceholder" />
+        <button id="ban-steamid-apply" data-i18n="bans.banBtn"></button>
+      </div>
+      <div class="row">
+        <input id="unban-steamid" placeholder="STEAM_1:0:12345" />
+        <button id="unban-steamid-apply" data-i18n="bans.unbanBtn"></button>
+      </div>
+      <pre id="bans-steamid-list" class="output"></pre>
+
+      <h2 data-i18n="bans.ipTitle"></h2>
+      <p class="muted" data-i18n="bans.ipHint"></p>
+      <div class="row">
+        <input id="ban-ip" placeholder="192.168.1.5" />
+        <input id="ban-ip-minutes" type="number" min="0" value="0" data-i18n-placeholder="bans.minutesPlaceholder" />
+        <button id="ban-ip-apply" data-i18n="bans.banBtn"></button>
+      </div>
+      <div class="row">
+        <input id="unban-ip" placeholder="192.168.1.5" />
+        <button id="unban-ip-apply" data-i18n="bans.unbanBtn"></button>
+      </div>
+      <pre id="bans-ip-list" class="output"></pre>
+    </section>
+
+    <section id="tab-settings" class="tab-panel">
+      <h2 data-i18n="settings.passwordTitle"></h2>
+      <div class="row">
+        <input id="server-password" data-i18n-placeholder="settings.passwordPlaceholder" />
+        <button id="server-password-apply" data-i18n="settings.apply"></button>
+      </div>
+
+      <h2 data-i18n="settings.stopTitle"></h2>
+      <p class="muted" data-i18n="settings.stopHint"></p>
+      <div class="row">
+        <span id="power-badge" class="pill"></span>
+        <button id="stop-server-btn" class="danger" data-i18n="settings.stopBtn"></button>
+        <button id="start-server-btn" data-i18n="settings.startBtn"></button>
+        <span id="power-status" class="muted"></span>
+      </div>
+
+      <h2 data-i18n="settings.restartTitle"></h2>
+      <p class="muted" data-i18n="settings.restartHint"></p>
+      <div class="row">
+        <button id="restart-server-btn" class="danger" data-i18n="settings.restartBtn"></button>
+        <span id="restart-status" class="muted"></span>
+      </div>
+
+      <h2 data-i18n="settings.cvarsTitle"></h2>
+      <p class="muted" data-i18n="settings.cvarsHint"></p>
+      <div id="cvars-list"></div>
+    </section>
+
+    <section id="tab-console" class="tab-panel">
+      <h2 data-i18n="console.title"></h2>
+      <p class="muted" data-i18n="console.hint"></p>
+      <div class="row">
+        <input id="console-input" data-i18n-placeholder="console.placeholder" />
+        <button id="console-run" data-i18n="console.run"></button>
+      </div>
+      <pre id="console-output" class="output"></pre>
+    </section>
+
+    <section id="tab-activity" class="tab-panel">
+      <h2 data-i18n="activity.title"></h2>
+      <table class="activity-table">
+        <thead>
+          <tr>
+            <th data-i18n="activity.time"></th>
+            <th data-i18n="activity.who"></th>
+            <th data-i18n="activity.action"></th>
+            <th data-i18n="activity.details"></th>
+          </tr>
+        </thead>
+        <tbody id="activity-body"></tbody>
+      </table>
+    </section>
+  </main>
+</div>
+
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

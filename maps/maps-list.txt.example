@@ -1,0 +1,36 @@
+# Extra (non-stock) map downloads.
+#
+# The server already ships with the classic retail CS 1.6 map pool
+# (de_dust2, de_dust, de_train, de_aztec, de_cbble, de_inferno, de_nuke,
+# de_prodigy, de_survivor, de_vertigo, cs_assault, cs_italy, cs_office) —
+# see server/config/mapcycle.txt. Those need nothing extra.
+#
+# Popular community maps like fy_iceworld, ka_rats/kaos_rats, awp_india,
+# 35hp_2, etc. are NOT part of the official install — they're fan-made
+# files spread across many sites with unclear/mixed redistribution rights,
+# so we don't hardcode download links here. Instead:
+#
+#   1. Find the map yourself from a source you trust (e.g. GameBanana's
+#      Counter-Strike 1.6 map section, a community forum, or a friend's
+#      server's own map pack).
+#   2. Copy this file to maps-list.txt (same folder) and add one line
+#      per map:
+#
+#        mapname=https://example.com/path/to/mapname.zip
+#
+#      - The URL may point to a .zip (containing the .bsp and any
+#        matching .res/.txt/.wad resource files) or directly to a .bsp.
+#      - `mapname` must match the .bsp filename without extension, and
+#        is what you'll type in mapcycle.txt / the panel's map switcher.
+#
+#   3. Restart the cs-server container (or run
+#      docker compose exec cs-server /server/scripts/download-maps.sh).
+#      Already-downloaded maps are skipped, so this is safe to re-run.
+#
+# You can also skip this entirely and just drop .bsp (+ .res/.txt/.wad)
+# files straight into the ./maps/ folder on the host — they get synced
+# into the server's maps directory on every container start either way.
+#
+# Example (uncomment and point at a source you trust):
+# fy_iceworld=https://example.com/maps/fy_iceworld.zip
+# ka_rats=https://example.com/maps/ka_rats.zip

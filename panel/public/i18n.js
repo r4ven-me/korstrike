@@ -1,0 +1,209 @@
+'use strict';
+
+const TRANSLATIONS = {
+  en: {
+    'login.subtitle': 'Server control panel login',
+    'login.username': 'Username',
+    'login.password': 'Password',
+    'login.submit': 'Log in',
+    'topbar.connDot': 'connection to the server',
+    'topbar.logout': 'Log out',
+    'tabs.players': 'Players',
+    'tabs.map': 'Map',
+    'tabs.bans': 'Bans',
+    'tabs.settings': 'Settings',
+    'tabs.console': 'Console',
+    'tabs.activity': 'Activity',
+    'players.name': 'Name',
+    'players.ping': 'Ping',
+    'players.time': 'Time',
+    'players.frags': 'Frags',
+    'players.kick': 'Kick',
+    'players.ban': 'Ban',
+    'players.confirmBan': 'Permanently ban {name} ({steamid}) by SteamID and IP?',
+    'players.none': 'No players online',
+    'common.loading': 'Loading…',
+    'common.empty': '(empty)',
+    'common.map': 'map: {map}',
+    'common.playersCount': 'players: {count}',
+    'map.changeTitle': 'Change map',
+    'map.changeBtn': 'Change map',
+    'map.listHint': 'The list includes the stock maps (Dust2, Assault, Italy, etc.) plus any custom maps added to <code>maps/</code>.',
+    'map.manualTitle': 'Or enter a map manually',
+    'map.manualHint': 'If a map isn’t in the list above (e.g. auto-detection missed it), type the exact .bsp filename without the extension.',
+    'map.manualPlaceholder': 'e.g. fy_iceworld',
+    'map.changing': 'Changing map…',
+    'map.loadError': 'Failed to load the map list: {error}',
+    'map.downloadTitle': 'Download a map',
+    'map.downloadHint': 'Fetches a .bsp (or a .zip containing one, plus .res/.txt/.wad resources) from a URL you trust and drops it straight into the shared maps volume — playable immediately, no restart needed.',
+    'map.downloadNamePlaceholder': 'map name, e.g. fy_iceworld',
+    'map.downloadUrlPlaceholder': 'https://... .bsp or .zip',
+    'map.downloadBtn': 'Download',
+    'map.downloading': 'Downloading…',
+    'map.downloadSuccess': 'Installed: {files}',
+    'bans.steamidTitle': 'Ban by SteamID',
+    'bans.minutesPlaceholder': 'minutes (0 = forever)',
+    'bans.banBtn': 'Ban',
+    'bans.unbanBtn': 'Unban',
+    'bans.ipTitle': 'Ban by IP',
+    'bans.ipHint': 'Matters for non-Steam players — they often share the same placeholder SteamID, so an IP ban is the only thing that actually works.',
+    'settings.passwordTitle': 'Server password',
+    'settings.passwordPlaceholder': 'leave empty — no password',
+    'settings.apply': 'Apply',
+    'settings.restartTitle': 'Restart server',
+    'settings.restartHint': 'Fully restarts the game process (map and settings are reapplied). Players will be disconnected and can reconnect in 10–15 seconds.',
+    'settings.restartBtn': 'Restart server',
+    'settings.restartConfirm': 'Restart the game server? All players will be disconnected for 10–15 seconds.',
+    'settings.restarting': 'Restarting…',
+    'settings.restartOnline': 'Server is back online',
+    'settings.restartUnknown': 'Couldn’t confirm the restart — check the Players tab',
+    'settings.stopTitle': 'Server power',
+    'settings.stopHint': 'Fully stops the game process — it will not come back on its own. Use this if you don’t always want the server running.',
+    'settings.stopBtn': 'Stop server',
+    'settings.startBtn': 'Start server',
+    'settings.stopConfirm': 'Stop the game server? It will stay down until you start it again from here.',
+    'settings.stopping': 'Stopping…',
+    'settings.starting': 'Starting…',
+    'settings.stoppedBadge': 'Stopped',
+    'settings.runningBadge': 'Running',
+    'players.stoppedMessage': 'Server is stopped',
+    'settings.cvarsTitle': 'Game settings',
+    'settings.cvarsHint': 'Hover a setting’s name to see a tooltip. Current values are pulled live from the server.',
+    'settings.cvarCurrent': 'current: {value}',
+    'settings.cvarNA': 'n/a',
+    'settings.readonly': 'read-only',
+    'console.title': 'RCON console',
+    'console.hint': 'Any server command, directly. Use with care.',
+    'console.placeholder': 'e.g. sv_gravity 800',
+    'console.run': 'Run',
+    'console.running': 'Running…',
+    'console.noOutput': '(no output)',
+    'console.error': 'Error: {error}',
+    'activity.title': 'Activity log',
+    'activity.time': 'Time',
+    'activity.who': 'Who',
+    'activity.action': 'Action',
+    'activity.details': 'Details',
+    'session.expired': 'Session expired — please log in again.',
+  },
+  ru: {
+    'login.subtitle': 'Вход в панель управления сервером',
+    'login.username': 'Логин',
+    'login.password': 'Пароль',
+    'login.submit': 'Войти',
+    'topbar.connDot': 'соединение с сервером',
+    'topbar.logout': 'Выйти',
+    'tabs.players': 'Игроки',
+    'tabs.map': 'Карта',
+    'tabs.bans': 'Баны',
+    'tabs.settings': 'Настройки',
+    'tabs.console': 'Консоль',
+    'tabs.activity': 'Журнал',
+    'players.name': 'Имя',
+    'players.ping': 'Пинг',
+    'players.time': 'Время',
+    'players.frags': 'Фраги',
+    'players.kick': 'Кик',
+    'players.ban': 'Бан',
+    'players.confirmBan': 'Забанить {name} ({steamid}) по SteamID и IP навсегда?',
+    'players.none': 'Нет игроков онлайн',
+    'common.loading': 'Загрузка…',
+    'common.empty': '(пусто)',
+    'common.map': 'карта: {map}',
+    'common.playersCount': 'игроков: {count}',
+    'map.changeTitle': 'Смена карты',
+    'map.changeBtn': 'Сменить карту',
+    'map.listHint': 'Список включает стандартные карты (Dust2, Assault, Italy и т.д.) и любые кастомные карты, добавленные в <code>maps/</code>.',
+    'map.manualTitle': 'Или указать карту вручную',
+    'map.manualHint': 'Если нужной карты нет в списке выше (например, автоопределение её не нашло) — впишите точное имя .bsp-файла без расширения.',
+    'map.manualPlaceholder': 'например: fy_iceworld',
+    'map.changing': 'Меняем карту…',
+    'map.loadError': 'Ошибка загрузки списка карт: {error}',
+    'map.downloadTitle': 'Скачать карту',
+    'map.downloadHint': 'Скачивает .bsp (или .zip с ним и файлами .res/.txt/.wad) по доверенной ссылке и кладёт прямо в общий volume с картами — сразу доступна для игры, перезапуск не нужен.',
+    'map.downloadNamePlaceholder': 'имя карты, например: fy_iceworld',
+    'map.downloadUrlPlaceholder': 'https://... .bsp или .zip',
+    'map.downloadBtn': 'Скачать',
+    'map.downloading': 'Скачиваем…',
+    'map.downloadSuccess': 'Установлено: {files}',
+    'bans.steamidTitle': 'Бан по SteamID',
+    'bans.minutesPlaceholder': 'минут (0 = навсегда)',
+    'bans.banBtn': 'Забанить',
+    'bans.unbanBtn': 'Разбанить',
+    'bans.ipTitle': 'Бан по IP',
+    'bans.ipHint': 'Важно для игроков без Steam — у них часто одинаковый служебный SteamID, и бан по IP — единственный рабочий способ.',
+    'settings.passwordTitle': 'Пароль сервера',
+    'settings.passwordPlaceholder': 'оставьте пустым — без пароля',
+    'settings.apply': 'Применить',
+    'settings.restartTitle': 'Перезапуск сервера',
+    'settings.restartHint': 'Полный перезапуск игрового процесса (карта и настройки применятся заново). Игроки будут отключены и через 10–15 секунд смогут переподключиться.',
+    'settings.restartBtn': 'Перезапустить сервер',
+    'settings.restartConfirm': 'Перезапустить игровой сервер? Все игроки будут отключены на 10–15 секунд.',
+    'settings.restarting': 'Перезапуск…',
+    'settings.restartOnline': 'Сервер снова в сети',
+    'settings.restartUnknown': 'Не удалось подтвердить перезапуск — проверьте вкладку «Игроки»',
+    'settings.stopTitle': 'Питание сервера',
+    'settings.stopHint': 'Полностью останавливает игровой процесс — сам не поднимется. Используйте, если сервер не должен работать постоянно.',
+    'settings.stopBtn': 'Остановить сервер',
+    'settings.startBtn': 'Запустить сервер',
+    'settings.stopConfirm': 'Остановить игровой сервер? Он останется выключенным, пока вы не запустите его снова отсюда.',
+    'settings.stopping': 'Останавливаем…',
+    'settings.starting': 'Запускаем…',
+    'settings.stoppedBadge': 'Остановлен',
+    'settings.runningBadge': 'Работает',
+    'players.stoppedMessage': 'Сервер остановлен',
+    'settings.cvarsTitle': 'Игровые параметры',
+    'settings.cvarsHint': 'Наведите курсор на название параметра, чтобы увидеть подсказку. Текущее значение подгружается с сервера.',
+    'settings.cvarCurrent': 'тек.: {value}',
+    'settings.cvarNA': 'н/д',
+    'settings.readonly': 'только чтение',
+    'console.title': 'RCON-консоль',
+    'console.hint': 'Любая команда сервера напрямую. Используйте осторожно.',
+    'console.placeholder': 'например: sv_gravity 800',
+    'console.run': 'Выполнить',
+    'console.running': 'Выполняем…',
+    'console.noOutput': '(нет вывода)',
+    'console.error': 'Ошибка: {error}',
+    'activity.title': 'Журнал действий',
+    'activity.time': 'Время',
+    'activity.who': 'Кто',
+    'activity.action': 'Действие',
+    'activity.details': 'Детали',
+    'session.expired': 'Сессия истекла — войдите снова.',
+  },
+};
+
+function getLang() {
+  return localStorage.getItem('korstrike-lang') || 'en';
+}
+
+function setLang(lang) {
+  localStorage.setItem('korstrike-lang', lang);
+  document.documentElement.lang = lang;
+}
+
+function t(key, vars) {
+  const lang = getLang();
+  let str = (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.en[key] || key;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      str = str.replace(`{${k}}`, v);
+    }
+  }
+  return str;
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = getLang();
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.innerHTML = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  const langBtn = document.getElementById('lang-toggle');
+  if (langBtn) langBtn.textContent = getLang() === 'en' ? 'EN' : 'RU';
+}

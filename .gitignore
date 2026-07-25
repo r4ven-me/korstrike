@@ -1,0 +1,5 @@
+.env
+node_modules/
+maps/*
+!maps/maps-list.txt.example
+!maps/.gitkeep
