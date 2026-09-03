@@ -1,12 +1,24 @@
+---
+
+volumes:
+  korstrike_data:
+    name: korstrike_data
+  korstrike_panel:
+    name: korstrike_panel
+  korstrike_maps:
+    name: korstrike_maps
+
 services:
-  cs-server:
+  korstrike:
     build:
       context: .
-      dockerfile: server/Dockerfile
-    container_name: korstrike-server
+      dockerfile: Dockerfile
+    image: korstrike
+    container_name: korstrike
     restart: unless-stopped
     ports:
       - "${GAME_PORT:-27015}:${GAME_PORT:-27015}/udp"
+      - "${PANEL_PORT:-8080}:8080"
     environment:
       GAME_PORT: "${GAME_PORT:-27015}"
       SERVER_HOSTNAME: "${SERVER_HOSTNAME:-Korstrike CS 1.6}"
@@ -23,56 +35,16 @@ services:
       SV_MINRATE: "${SV_MINRATE:-3000}"
       DOWNLOAD_MAPS: "${DOWNLOAD_MAPS:-true}"
       REUNION_STEAMID_SALT: "${REUNION_STEAMID_SALT:-}"
-    volumes:
-      - cs-data:/home/hlds/hlds
-      - maps-data:/home/hlds/hlds/cstrike/maps
-      - control-data:/control
-      - ./maps:/maps-src
-    networks:
-      - korstrike
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
-    mem_limit: 1g
-    cpus: 1.5
-
-  panel:
-    build:
-      context: ./panel
-      dockerfile: Dockerfile
-    container_name: korstrike-panel
-    restart: unless-stopped
-    depends_on:
-      - cs-server
-    ports:
-      - "${PANEL_PORT:-8080}:8080"
-    environment:
-      RCON_HOST: cs-server
-      RCON_PORT: "${GAME_PORT:-27015}"
-      RCON_PASSWORD: "${RCON_PASSWORD:?RCON_PASSWORD must be set in .env}"
       ADMIN_USER: "${ADMIN_USER:?ADMIN_USER must be set in .env}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set in .env}"
       SESSION_SECRET: "${SESSION_SECRET:-}"
     volumes:
-      - panel-data:/panel-data
-      - maps-data:/maps-data
-      - control-data:/control
-    networks:
-      - korstrike
+      - korstrike_data:/home/hlds/hlds
+      - korstrike_panel:/opt/korstrike/panel
+      - korstrike_maps:/opt/korstrike/maps
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
-    mem_limit: 256m
-    cpus: 0.5
-
-networks:
-  korstrike:
-    driver: bridge
-
-volumes:
-  cs-data:
-  maps-data:
-  control-data:
-  panel-data:
+    mem_limit: 2g
+    cpus: 2

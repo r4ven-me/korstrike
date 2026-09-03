@@ -3,7 +3,7 @@
 # Safe to re-run: existing .bsp files are never re-downloaded or overwritten.
 set -uo pipefail
 
-MAPS_SRC="${MAPS_SRC:-/maps-src}"
+MAPS_SRC="${MAPS_SRC:-/opt/korstrike/maps}"
 LIST_FILE="$MAPS_SRC/maps-list.txt"
 
 if [[ ! -f "$LIST_FILE" ]]; then

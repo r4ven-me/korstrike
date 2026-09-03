@@ -56,6 +56,21 @@
 
   <main>
     <section id="tab-dashboard" class="tab-panel active">
+      <h2 data-i18n="settings.stopTitle"></h2>
+      <p class="muted" data-i18n="settings.stopHint"></p>
+      <div class="row">
+        <span id="power-badge" class="pill"></span>
+        <button id="stop-server-btn" class="danger" data-i18n="settings.stopBtn"></button>
+        <button id="start-server-btn" data-i18n="settings.startBtn"></button>
+        <span id="power-status" class="muted"></span>
+      </div>
+
+      <div class="row bots-toolbar">
+        <span id="bots-count" class="pill">—</span>
+        <button id="bots-add-btn" data-i18n="players.botsAdd"></button>
+        <button id="bots-kick-btn" data-i18n="players.botsKick"></button>
+        <button id="bots-kickall-btn" class="danger" data-i18n="players.botsKickAll"></button>
+      </div>
       <table class="players-table">
         <thead>
           <tr>
@@ -131,15 +146,6 @@
       <div class="row">
         <input id="server-password" data-i18n-placeholder="settings.passwordPlaceholder" />
         <button id="server-password-apply" data-i18n="settings.apply"></button>
-      </div>
-
-      <h2 data-i18n="settings.stopTitle"></h2>
-      <p class="muted" data-i18n="settings.stopHint"></p>
-      <div class="row">
-        <span id="power-badge" class="pill"></span>
-        <button id="stop-server-btn" class="danger" data-i18n="settings.stopBtn"></button>
-        <button id="start-server-btn" data-i18n="settings.startBtn"></button>
-        <span id="power-status" class="muted"></span>
       </div>
 
       <h2 data-i18n="settings.restartTitle"></h2>

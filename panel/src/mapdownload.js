@@ -8,7 +8,7 @@ const { promisify } = require('util');
 
 const execFileAsync = promisify(execFile);
 
-const MAPS_DIR = process.env.MAPS_DIR || '/maps-data';
+const MAPS_DIR = process.env.MAPS_DIR || '/home/hlds/hlds/cstrike/maps';
 const MAX_BYTES = 200 * 1024 * 1024; // generous cap for a CS map/resource pack
 
 async function downloadToBuffer(url) {
@@ -41,9 +41,9 @@ async function walk(dir, found) {
 }
 
 // Downloads a map from a URL (zip or bare .bsp), extracts it, and drops the
-// .bsp + matching resource files (.res/.txt/.wad) straight into the shared
-// maps-data volume — the same volume cs-server mounts as its live maps
-// directory, so the map is playable immediately, no restart needed.
+// .bsp + matching resource files (.res/.txt/.wad) straight into the live
+// cstrike/maps directory, so the map is playable immediately, no restart
+// needed.
 async function downloadMap(name, url) {
   if (!/^[a-z0-9_-]+$/i.test(name)) throw new Error('invalid map name');
 

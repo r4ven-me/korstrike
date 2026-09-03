@@ -3,9 +3,11 @@ set -euo pipefail
 
 INSTALL_DIR="/home/hlds/hlds"
 CSTRIKE_DIR="$INSTALL_DIR/cstrike"
-MAPS_SRC="/maps-src"
+MAPS_SRC="/opt/korstrike/maps"
 
 : "${RCON_PASSWORD:?RCON_PASSWORD is required — set it in your .env file (see .env.example)}"
+: "${ADMIN_USER:?ADMIN_USER is required — set it in your .env file (see .env.example)}"
+: "${ADMIN_PASSWORD:?ADMIN_PASSWORD is required — set it in your .env file (see .env.example)}"
 
 export SERVER_HOSTNAME="${SERVER_HOSTNAME:-Korstrike CS 1.6}"
 export SV_PASSWORD="${SV_PASSWORD:-}"
@@ -21,14 +23,6 @@ GAME_PORT="${GAME_PORT:-27015}"
 STARTMAP="${STARTMAP:-de_dust2}"
 
 mkdir -p "$CSTRIKE_DIR/maps"
-# maps/ is a volume shared with the panel container (so downloaded maps go
-# live immediately, no restart). Whichever container mounts it first ends up
-# owning it — here that's this container's "hlds" user — so make it
-# world-writable to keep the panel's separate non-root user able to drop
-# files into it too. Low-stakes directory (map files only), both containers
-# already mutually trusted, so this is simpler and more robust than trying
-# to keep the two Dockerfiles' non-root UIDs in permanent sync.
-chmod 777 "$CSTRIKE_DIR/maps"
 
 # 1. Fetch any maps listed in maps-list.txt that aren't downloaded yet.
 if [[ "${DOWNLOAD_MAPS:-true}" == "true" && -d "$MAPS_SRC" ]]; then
@@ -58,7 +52,7 @@ envsubst < /server/config/server.cfg.template > "$CSTRIKE_DIR/server.cfg"
 touch "$CSTRIKE_DIR/banned.cfg" "$CSTRIKE_DIR/listip.cfg"
 
 # 6. Fill in ReUnion's SteamID hash salt (needed for no-steam client support
-# — see server/Dockerfile). Required to be non-empty or ReUnion refuses to
+# — see Dockerfile). Required to be non-empty or ReUnion refuses to
 # initialize; generated once and persisted on the volume so player IDs stay
 # stable across restarts, unless the operator sets REUNION_STEAMID_SALT.
 if [[ -f "$CSTRIKE_DIR/reunion.cfg" ]]; then
@@ -74,7 +68,12 @@ if [[ -f "$CSTRIKE_DIR/reunion.cfg" ]]; then
   sed -i "s|^SteamIdHashSalt.*|SteamIdHashSalt = $REUNION_SALT|" "$CSTRIKE_DIR/reunion.cfg"
 fi
 
-# 7. Run the server under our own restart loop instead of hlds_run's
+# 7. Start the web panel in the background. It talks to the game server
+# over loopback RCON (see panel/src/index.js's RCON_HOST default).
+node /app/src/index.js &
+panel_pid=$!
+
+# 8. Run the game server under our own restart loop instead of hlds_run's
 # built-in one, so the panel can genuinely stop it (not just restart it).
 # hlds_run's default behavior execs straight into the engine and, on crash,
 # loops forever internally — outside our control entirely, so a "stop"
@@ -85,15 +84,28 @@ fi
 # lets us decide whether to bring it back up.
 CONTROL_DIR="/control"
 STOP_FLAG="$CONTROL_DIR/stop"
-mkdir -p "$CONTROL_DIR" 2>/dev/null || true
+mkdir -p "$CONTROL_DIR"
 
-child_pid=""
+# The game server never auto-starts on a fresh container boot — only an
+# explicit Start from the panel brings it up. Unconditionally (re)writing
+# the stop flag here, before the loop below ever looks at it, means
+# whatever was left over from a previous container life doesn't matter:
+# every boot begins in the "stopped, waiting for the panel" state. Within
+# this same run the flag still works exactly as before — cleared by Start,
+# set by Stop, untouched by the crash/RCON-quit auto-restart a few lines
+# down.
+rm -f "$STOP_FLAG"
+date -Iseconds > "$STOP_FLAG"
+
+hlds_pid=""
 cleanup() {
   echo "[entrypoint] stopping"
-  if [[ -n "$child_pid" ]]; then
-    kill -TERM "$child_pid" 2>/dev/null || true
-    wait "$child_pid" 2>/dev/null || true
+  if [[ -n "$hlds_pid" ]]; then
+    kill -TERM "$hlds_pid" 2>/dev/null || true
+    wait "$hlds_pid" 2>/dev/null || true
   fi
+  kill -TERM "$panel_pid" 2>/dev/null || true
+  wait "$panel_pid" 2>/dev/null || true
   exit 0
 }
 trap cleanup TERM INT
@@ -101,15 +113,15 @@ trap cleanup TERM INT
 cd "$INSTALL_DIR"
 while true; do
   if [[ -f "$STOP_FLAG" ]]; then
-    echo "[entrypoint] stop requested — server will stay down until started from the panel"
+    echo "[entrypoint] server is stopped — waiting for Start from the panel"
     while [[ -f "$STOP_FLAG" ]]; do sleep 2; done
-    echo "[entrypoint] start requested — bringing the server back up"
+    echo "[entrypoint] start requested — bringing the server up"
   fi
   echo "[entrypoint] starting HLDS on port $GAME_PORT, map $STARTMAP"
   ./hlds_run -norestart -console -game cstrike -port "$GAME_PORT" +map "$STARTMAP" +maxplayers "$MAXPLAYERS" &
-  child_pid=$!
-  wait "$child_pid" || true
-  child_pid=""
-  echo "[entrypoint] server exited, restarting in 5s (set the stop flag from the panel to keep it down)"
+  hlds_pid=$!
+  wait "$hlds_pid" || true
+  hlds_pid=""
+  echo "[entrypoint] server exited, restarting in 5s (stop it from the panel to keep it down)"
   sleep 5
 done

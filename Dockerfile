@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
 #
+# Single image: the CS 1.6 dedicated server (HLDS/ReHLDS/Metamod/YaPB/
+# ReDeathmatch stack) and the web control panel run together as one process
+# tree in one container — see entrypoint.sh for how both get started and
+# supervised.
+
 # Stage 1: install HLDS (Half-Life Dedicated Server, appid 90 — this depot
 # ships the cstrike mod content and the stock retail map set) via SteamCMD's
 # anonymous login, then overlay a ReHLDS engine build for its crash/exploit
@@ -14,11 +19,12 @@ ARG REGAMEDLL_REPO=rehlds/ReGameDLL_CS
 ARG AMXMODX_REPO=alliedmodders/amxmodx
 ARG REAPI_REPO=rehlds/ReAPI
 ARG REDEATHMATCH_REPO=ReDeathmatch/ReDeathmatch_AMXX
+ARG YAPB_REPO=yapb/yapb
 
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-      ca-certificates curl unzip jq \
+      ca-certificates curl unzip xz-utils jq \
       lib32gcc-s1 lib32stdc++6 lib32z1 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -160,6 +166,60 @@ RUN set -euo pipefail; \
     rm -rf /tmp/mm /tmp/reunion; \
     echo "Metamod-R + ReUnion installed."
 
+# Cache-busts only the YaPB overlay step below.
+ARG YAPB_CACHEBUST=1
+
+# Overlay YaPB (https://github.com/yapb/yapb) — a maintained, actively
+# developed CS bot, so the panel can add/kick bots on demand instead of
+# needing a human to fill empty slots. It's a Metamod plugin (not an AMX Mod
+# X plugin), so it doesn't depend on the AMX Mod X/deathmatch stack below.
+#
+# Verified real archive layout (downloaded and extracted the actual asset,
+# not assumed from docs): "yapb-<version>-linux.tar.xz" contains a top-level
+# addons/yapb/{bin/yapb.so,conf/,data/graph/*.graph} tree that drops directly
+# into cstrike/, same shape Metamod/ReUnion already use. Its bundled
+# data/graph/ waypoints already cover this image's entire stock map pool
+# (de_dust2, de_dust, de_train, de_aztec, de_cbble, de_inferno, de_nuke,
+# de_prodigy, de_survivor, de_vertigo, cs_assault, cs_italy, cs_office), so
+# bots work out of the box with no extra waypoint generation. Registered in
+# plugins.ini the same way Reunion is: "linux addons/yapb/bin/yapb.so".
+#
+# The plugin's own shipped conf/yapb.cfg defaults to yb_quota 9 (verified by
+# reading the actual extracted file, not assumed) — i.e. it auto-fills up to
+# 9 bots on its own, which would silently contradict the panel's manual
+# add/kick/kickall model. Patched down to 0 here so nothing spawns on its
+# own; the panel drives bots explicitly via `yb add` / `yb kick` /
+# `yb kickall` over RCON instead of the quota auto-fill system. Bots show up
+# in `status` output with uniqueid "BOT" (standard GoldSrc behavior for any
+# fake/plugin-controlled client), which is how the panel tells them apart
+# from real players.
+RUN set -euo pipefail; \
+    yapb_asset_url="$(curl -fsSL "https://api.github.com/repos/${YAPB_REPO}/releases/latest" \
+      | jq -r '[.assets[] | select(.name | test("^yapb-.*-linux\\.tar\\.xz$"))][0].browser_download_url')"; \
+    if [[ -z "$yapb_asset_url" || "$yapb_asset_url" == "null" ]]; then \
+      echo "Could not resolve a YaPB release asset — bot support will be unavailable." >&2; \
+      exit 0; \
+    fi; \
+    echo "YaPB asset: $yapb_asset_url"; \
+    mkdir -p /tmp/yapb/extracted; \
+    if ! curl -fsSL --retry 5 --retry-all-errors --connect-timeout 10 --max-time 30 --retry-delay 2 -o /tmp/yapb/yapb.tar.xz "$yapb_asset_url"; then \
+      echo "YaPB download failed — bot support will be unavailable." >&2; \
+      rm -rf /tmp/yapb; exit 0; \
+    fi; \
+    if ! tar -xJf /tmp/yapb/yapb.tar.xz -C /tmp/yapb/extracted; then \
+      echo "YaPB archive failed to extract — bot support will be unavailable." >&2; \
+      rm -rf /tmp/yapb; exit 0; \
+    fi; \
+    if [[ ! -f /tmp/yapb/extracted/addons/yapb/bin/yapb.so ]]; then \
+      echo "YaPB archive layout unexpected — bot support will be unavailable." >&2; \
+      rm -rf /tmp/yapb; exit 0; \
+    fi; \
+    cp -a /tmp/yapb/extracted/addons/yapb /home/steam/hlds/cstrike/addons/yapb; \
+    sed -i 's/^yb_quota[[:space:]].*/yb_quota "0"/' /home/steam/hlds/cstrike/addons/yapb/conf/yapb.cfg; \
+    echo 'linux addons/yapb/bin/yapb.so' >> /home/steam/hlds/cstrike/addons/metamod/plugins.ini; \
+    rm -rf /tmp/yapb; \
+    echo "YaPB installed."
+
 # Cache-busts only the deathmatch stack overlay step below.
 ARG DEATHMATCH_CACHEBUST=1
 
@@ -280,8 +340,23 @@ RUN set -euo pipefail; \
       rm -rf /tmp/redm.zip /tmp/redm_extracted; \
     fi
 
-# Stage 2: slim runtime image — just the installed game tree + runtime libs,
-# running as a non-root user.
+# Stage 2: a plain reference to the official Node.js build — used below only
+# as a COPY --from source, never run directly. Same Debian/glibc base
+# (bookworm) as the runtime stage, so its /usr/local drops in as-is; this
+# avoids curl-piping NodeSource's install script into bash for something a
+# trusted upstream image already ships correctly built.
+FROM node:20-bookworm-slim AS node
+
+# Stage 3: install the panel's npm dependencies in isolation, keyed only on
+# its own package.json/lock — so editing panel source code doesn't bust this
+# layer's cache.
+FROM node:20-bookworm-slim AS panel-deps
+WORKDIR /app
+COPY panel/package.json panel/package-lock.json* ./
+RUN npm install --omit=dev --no-audit --no-fund
+
+# Stage 4: final runtime image — game server + panel together, one non-root
+# user, one process tree (see entrypoint.sh).
 FROM debian:bookworm-slim AS runtime
 SHELL ["/bin/bash", "-c"]
 
@@ -292,15 +367,26 @@ RUN dpkg --add-architecture i386 && \
       lib32gcc-s1 lib32stdc++6 lib32z1 && \
     rm -rf /var/lib/apt/lists/*
 
+# Just the Node binary — npm/npx aren't needed at runtime since panel-deps
+# already installed the dependencies ahead of time.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+
 RUN useradd -m -s /bin/bash hlds
 
 COPY --from=installer --chown=hlds:hlds /home/steam/hlds /home/hlds/hlds
 COPY --chown=hlds:hlds server/config /server/config
 COPY --chown=root:root server/scripts /server/scripts
-COPY --chown=root:root server/entrypoint.sh /server/entrypoint.sh
 
-RUN chmod +x /server/entrypoint.sh /server/scripts/*.sh && \
-    mkdir -p /maps-src && chown hlds:hlds /maps-src
+COPY --from=panel-deps --chown=hlds:hlds /app/node_modules /app/node_modules
+COPY --chown=hlds:hlds panel/src /app/src
+COPY --chown=hlds:hlds panel/public /app/public
+
+COPY --chown=root:root entrypoint.sh /entrypoint.sh
+# /control holds the stop/start flag — see entrypoint.sh — pre-created here
+# because "hlds" is non-root and can't mkdir directly under /.
+RUN chmod +x /entrypoint.sh /server/scripts/*.sh && \
+    mkdir -p /opt/korstrike/maps /opt/korstrike/panel /control && \
+    chown hlds:hlds /opt/korstrike/maps /opt/korstrike/panel /control
 
 # The engine looks for steamclient.so under ~/.steam/sdk32|64/ — a path a
 # real Steam client install would populate, but SteamCMD alone doesn't.
@@ -321,7 +407,8 @@ RUN echo "10" > /home/hlds/hlds/steam_appid.txt && chown hlds:hlds /home/hlds/hl
 USER hlds
 WORKDIR /home/hlds/hlds
 
-VOLUME ["/home/hlds/hlds", "/maps-src"]
+VOLUME ["/home/hlds/hlds", "/opt/korstrike/maps", "/opt/korstrike/panel"]
 EXPOSE 27015/udp
+EXPOSE 8080/tcp
 
-ENTRYPOINT ["/server/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]

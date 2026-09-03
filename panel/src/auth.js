@@ -5,7 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const DATA_DIR = process.env.PANEL_DATA_DIR || '/panel-data';
+const DATA_DIR = process.env.PANEL_DATA_DIR || '/opt/korstrike/panel';
 const SECRET_FILE = path.join(DATA_DIR, 'session_secret');
 
 function getSessionSecret() {

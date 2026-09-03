@@ -127,6 +127,9 @@ function init() {
     document.getElementById('stop-server-btn').addEventListener('click', onStopServer);
     document.getElementById('start-server-btn').addEventListener('click', onStartServer);
     document.getElementById('console-run').addEventListener('click', onConsoleRun);
+    document.getElementById('bots-add-btn').addEventListener('click', onBotAdd);
+    document.getElementById('bots-kick-btn').addEventListener('click', onBotKick);
+    document.getElementById('bots-kickall-btn').addEventListener('click', onBotKickAll);
   }
 }
 
@@ -179,6 +182,7 @@ function renderStatus(status) {
     document.getElementById('info-hostname').textContent = '—';
     document.getElementById('info-map').textContent = t('settings.stoppedBadge');
     document.getElementById('info-players').textContent = '';
+    document.getElementById('bots-count').textContent = '—';
     document.getElementById('players-body').innerHTML =
       `<tr><td colspan="7" class="muted">${t('players.stoppedMessage')}</td></tr>`;
     return;
@@ -191,6 +195,12 @@ function renderStatus(status) {
     count: `${status.playersActive ?? 0}${status.maxPlayers ? ' / ' + status.maxPlayers : ''}`,
   });
 
+  // YaPB bots always show up with the literal uniqueid "BOT" (standard
+  // GoldSrc behavior for any fake/plugin-controlled client) — that's how
+  // bot rows are told apart from real players, no separate tracking needed.
+  const botsCount = status.players ? status.players.filter((p) => p.steamid === 'BOT').length : 0;
+  document.getElementById('bots-count').textContent = t('players.botsCount', { count: botsCount });
+
   const body = document.getElementById('players-body');
   if (!status.players || status.players.length === 0) {
     body.innerHTML = `<tr><td colspan="7" class="muted">${t('players.none')}</td></tr>`;
@@ -198,6 +208,7 @@ function renderStatus(status) {
   }
   body.innerHTML = '';
   for (const p of status.players) {
+    const isBot = p.steamid === 'BOT';
     const tr = document.createElement('tr');
     const ip = (p.address || '').split(':')[0];
     tr.innerHTML = `
@@ -217,21 +228,39 @@ function renderStatus(status) {
     kickBtn.onclick = async () => {
       await api('/kick', { method: 'POST', body: { userid: p.userid } }).catch(alert);
     };
-
-    const banBtn = document.createElement('button');
-    banBtn.className = 'ban-btn';
-    banBtn.textContent = t('players.ban');
-    banBtn.onclick = async () => {
-      if (!confirm(t('players.confirmBan', { name: p.name, steamid: p.steamid }))) return;
-      await api('/ban/steamid', { method: 'POST', body: { steamid: p.steamid, minutes: 0 } }).catch(alert);
-      if (ip) await api('/ban/ip', { method: 'POST', body: { ip, minutes: 0 } }).catch(alert);
-      loadBansLists();
-    };
-
     actionsCell.appendChild(kickBtn);
-    actionsCell.appendChild(banBtn);
+
+    // Banning is meaningless for bots — they all share the placeholder
+    // "BOT" uniqueid and have no real IP, so skip the Ban button for them.
+    if (!isBot) {
+      const banBtn = document.createElement('button');
+      banBtn.className = 'ban-btn';
+      banBtn.textContent = t('players.ban');
+      banBtn.onclick = async () => {
+        if (!confirm(t('players.confirmBan', { name: p.name, steamid: p.steamid }))) return;
+        await api('/ban/steamid', { method: 'POST', body: { steamid: p.steamid, minutes: 0 } }).catch(alert);
+        if (ip) await api('/ban/ip', { method: 'POST', body: { ip, minutes: 0 } }).catch(alert);
+        loadBansLists();
+      };
+      actionsCell.appendChild(banBtn);
+    }
+
     body.appendChild(tr);
   }
+}
+
+// --- Bots (YaPB) ---
+async function onBotAdd() {
+  await api('/bots/add', { method: 'POST' }).catch(alert);
+}
+
+async function onBotKick() {
+  await api('/bots/kick', { method: 'POST' }).catch(alert);
+}
+
+async function onBotKickAll() {
+  if (!confirm(t('players.botsKickAllConfirm'))) return;
+  await api('/bots/kick_all', { method: 'POST' }).catch(alert);
 }
 
 function escapeHtml(s) {

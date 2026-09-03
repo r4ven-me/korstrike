@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = process.env.PANEL_DATA_DIR || '/panel-data';
+const DATA_DIR = process.env.PANEL_DATA_DIR || '/opt/korstrike/panel';
 const LOG_FILE = path.join(DATA_DIR, 'audit.log');
 
 function record(user, action, detail) {

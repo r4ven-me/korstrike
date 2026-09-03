@@ -321,8 +321,8 @@ const CVAR_WHITELIST = {
     type: 'int', readonly: true, group: { en: 'Server info', ru: 'Информация о сервере' },
     label: { en: 'Max players', ru: 'Макс. игроков' },
     hint: {
-      en: 'Read-only: the engine refuses to change this while the server is running (confirmed live — it prints "cannot be changed while a server is running"). To change it, edit MAXPLAYERS in .env and run "docker compose up -d" to recreate the cs-server container — restarting the process alone re-uses the same container environment, so it won’t pick up a new value.',
-      ru: 'Только чтение: движок отказывается менять это значение, пока сервер работает (проверено вживую — выводит "cannot be changed while a server is running"). Чтобы изменить: отредактируйте MAXPLAYERS в .env и выполните "docker compose up -d" — пересоздаст контейнер cs-server. Одного перезапуска процесса недостаточно: он переиспользует то же окружение контейнера.',
+      en: 'Read-only: the engine refuses to change this while the server is running (confirmed live — it prints "cannot be changed while a server is running"). To change it, edit MAXPLAYERS in .env and run "docker compose up -d" to recreate the container — restarting the process alone re-uses the same container environment, so it won’t pick up a new value.',
+      ru: 'Только чтение: движок отказывается менять это значение, пока сервер работает (проверено вживую — выводит "cannot be changed while a server is running"). Чтобы изменить: отредактируйте MAXPLAYERS в .env и выполните "docker compose up -d" — пересоздаст контейнер. Одного перезапуска процесса недостаточно: он переиспользует то же окружение контейнера.',
     },
   },
   sv_maxrate: {
@@ -436,6 +436,40 @@ function createRouter({ rcon, rconGetChallenge, rconWithChallenge, getStatus, ad
     try {
       const out = await rcon(`changelevel ${map}`);
       audit.record(req.session.user, 'map_change', { map });
+      res.json({ ok: true, output: out });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Bots are provided by YaPB (a Metamod plugin, see Dockerfile) and
+  // controlled the same way you would from the server console. They show up
+  // in the regular player list (status output) with uniqueid "BOT", so no
+  // separate bot list/tracking is needed here.
+  router.post('/bots/add', async (req, res, next) => {
+    try {
+      const out = await rcon('yb add');
+      audit.record(req.session.user, 'bot_add', {});
+      res.json({ ok: true, output: out });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post('/bots/kick', async (req, res, next) => {
+    try {
+      const out = await rcon('yb kick');
+      audit.record(req.session.user, 'bot_kick', {});
+      res.json({ ok: true, output: out });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post('/bots/kick_all', async (req, res, next) => {
+    try {
+      const out = await rcon('yb kickall');
+      audit.record(req.session.user, 'bot_kick_all', {});
       res.json({ ok: true, output: out });
     } catch (err) {
       next(err);
@@ -629,8 +663,8 @@ function createRouter({ rcon, rconGetChallenge, rconWithChallenge, getStatus, ad
   });
 
   // Genuinely stops the game process (not just restarts it) — sets a flag
-  // on the shared control-data volume that entrypoint.sh's restart loop
-  // polls; the "quit" here just makes it happen immediately rather than
+  // in the container's local /control directory that entrypoint.sh's
+  // restart loop polls; the "quit" here just makes it happen immediately rather than
   // waiting for entrypoint.sh's next poll tick. No RCON call is required to
   // start it back up (nothing to talk to once it's down), so only the flag
   // gets cleared.
