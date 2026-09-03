@@ -1,4 +1,3 @@
-REGISTRY := forgejo.r4ven.lan/korstrike
 DOCKERHUB_USER := lans
 GITHUB_USER := lans
 TAG ?= latest
@@ -10,16 +9,14 @@ GHCR_IMAGE := ghcr.io/$(GITHUB_USER)/korstrike
 
 docker-build:
 	docker build -f Dockerfile \
-		-t $(REGISTRY)/korstrike:$(TAG) \
 		-t $(DOCKERHUB_IMAGE):$(TAG) \
 		-t $(GHCR_IMAGE):$(TAG) \
 		.
 
 test: docker-build
-	./smoke-test.sh $(REGISTRY)/korstrike:$(TAG)
+	./smoke-test.sh $(DOCKERHUB_IMAGE):$(TAG)
 
 docker-release: docker-build
-	docker push $(REGISTRY)/korstrike:$(TAG)
 	docker push $(DOCKERHUB_IMAGE):$(TAG)
 	docker push $(GHCR_IMAGE):$(TAG)
 
