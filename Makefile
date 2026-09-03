@@ -1,5 +1,5 @@
-DOCKERHUB_USER := lans
-GITHUB_USER := lans
+DOCKERHUB_USER := r4venme
+GITHUB_USER := r4ven-me
 TAG ?= latest
 
 DOCKERHUB_IMAGE := $(DOCKERHUB_USER)/korstrike
