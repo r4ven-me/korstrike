@@ -45,6 +45,7 @@
     <nav class="tabs">
       <div class="tabs-inner">
         <button class="tab-btn active" data-tab="dashboard" data-i18n="tabs.players"></button>
+        <button class="tab-btn" data-tab="server" data-i18n="tabs.server"></button>
         <button class="tab-btn" data-tab="map" data-i18n="tabs.map"></button>
         <button class="tab-btn" data-tab="bans" data-i18n="tabs.bans"></button>
         <button class="tab-btn" data-tab="settings" data-i18n="tabs.settings"></button>
@@ -56,15 +57,6 @@
 
   <main>
     <section id="tab-dashboard" class="tab-panel active">
-      <h2 data-i18n="settings.stopTitle"></h2>
-      <p class="muted" data-i18n="settings.stopHint"></p>
-      <div class="row">
-        <span id="power-badge" class="pill"></span>
-        <button id="stop-server-btn" class="danger" data-i18n="settings.stopBtn"></button>
-        <button id="start-server-btn" data-i18n="settings.startBtn"></button>
-        <span id="power-status" class="muted"></span>
-      </div>
-
       <div class="row bots-toolbar">
         <span id="bots-count" class="pill">—</span>
         <button id="bots-add-btn" data-i18n="players.botsAdd"></button>
@@ -87,6 +79,17 @@
           <tr><td colspan="7" class="muted" data-i18n="common.loading"></td></tr>
         </tbody>
       </table>
+    </section>
+
+    <section id="tab-server" class="tab-panel">
+      <h2 data-i18n="settings.stopTitle"></h2>
+      <p class="muted" data-i18n="settings.stopHint"></p>
+      <div class="row">
+        <span id="power-badge" class="pill"></span>
+        <button id="stop-server-btn" class="danger" data-i18n="settings.stopBtn"></button>
+        <button id="start-server-btn" data-i18n="settings.startBtn"></button>
+        <span id="power-status" class="muted"></span>
+      </div>
     </section>
 
     <section id="tab-map" class="tab-panel">

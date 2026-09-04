@@ -33,7 +33,7 @@ docker compose up -d --build
 ```
 
 - Panel: `http://<your-host>:8080` — log in with `ADMIN_USER`/`ADMIN_PASSWORD`,
-  then press **Start server** on the Players tab — the game process doesn't
+  then press **Start server** on the Server tab — the game process doesn't
   launch on its own (see "Server starts stopped" below).
 - Game server: `<your-host>:27015` (UDP) — connect from the CS 1.6 client console
   with `connect <host>:27015`, or via the in-game server browser (LAN tab if
@@ -84,7 +84,8 @@ queries the engine directly, no rebuild needed).
 
 | Tab | What it does |
 |---|---|
-| Игроки (Players) | Server power (status badge, Start/Stop) right at the top — see "Server starts stopped" below. Live player list (name, SteamID, IP, ping, time, frags), updated over a WebSocket every ~2.5s. Kick or ban directly from a row; add/remove bots from the toolbar above the table (see "Bots" below). |
+| Игроки (Players) | Live player list (name, SteamID, IP, ping, time, frags), updated over a WebSocket every ~2.5s. Kick or ban directly from a row; add/remove bots from the toolbar above the table (see "Bots" below). |
+| Сервер (Server) | Server power — status badge, Start/Stop (see "Server starts stopped" below). |
 | Карта (Map) | Change the live map from a dropdown of all installed maps; download a new map from a URL directly into the live maps directory, playable immediately. |
 | Баны (Bans) | Ban/unban by SteamID **and** by IP, with the current lists. IP bans matter because non-Steam clients often all share the same placeholder SteamID — banning by IP is what actually works against those. |
 | Настройки (Settings) | Toggle the server join password (`sv_password`); restart the game process; ~50 gameplay/network/physics cvars grouped by category, each with a hover tooltip and live current value. Settings that can't be changed while the server is running (like `maxplayers`) are shown read-only with an explanation instead of a broken "Apply" button — those come from `.env` and need a container recreate (`docker compose up -d`), which the panel deliberately doesn't have the privileges to trigger itself. |
@@ -113,7 +114,7 @@ only the game process inside stops.
 ### Server starts stopped
 
 `docker compose up` brings the container up, but the actual HLDS process
-does **not** launch on its own — the Players tab's status badge shows
+does **not** launch on its own — the Server tab's status badge shows
 "Stopped" and you press **Start server** yourself whenever you want to
 play. This holds on every container (re)start, not just the very first
 one: `entrypoint.sh` unconditionally (re)writes the stop flag before it
@@ -285,7 +286,7 @@ docker compose up -d --build
 - **Container restarts immediately / "RCON_PASSWORD is required"** (or the
   same for `ADMIN_USER`/`ADMIN_PASSWORD`): you haven't set it in `.env`.
 - **Players tab shows "Server is stopped" after `docker compose up`**: expected —
-  see "Server starts stopped" above; press **Start server** on the Players tab.
+  see "Server starts stopped" above; press **Start server** on the Server tab.
 - **Panel shows no players / "not polled yet"** (server already started):
   check `docker compose logs korstrike` — usually means the game server
   hasn't finished starting yet (give it a few more seconds after Start), or
