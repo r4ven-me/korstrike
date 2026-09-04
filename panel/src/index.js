@@ -12,7 +12,7 @@ const { createRouter } = require('./routes');
 const { setupWebSocket } = require('./ws');
 const serverControl = require('./servercontrol');
 
-const PORT = 8080;
+const PORT = Number(process.env.PANEL_PORT || 8080);
 const RCON_HOST = process.env.RCON_HOST || '127.0.0.1';
 const RCON_PORT = Number(process.env.RCON_PORT || process.env.GAME_PORT || 27015);
 const RCON_PASSWORD = process.env.RCON_PASSWORD;
